@@ -1,8 +1,8 @@
 ARG BASE_IMAGE="nvcr.io/nvidia/cuda"
-ARG BASE_IMAGE_TAG="12.8.1-devel-ubuntu24.04"
+ARG BASE_IMAGE_TAG="12.9.1-devel-ubuntu24.04"
 
 ARG RUNTIME_IMAGE="nvcr.io/nvidia/cuda"
-ARG RUNTIME_IMAGE_TAG="12.8.1-devel-ubuntu24.04"
+ARG RUNTIME_IMAGE_TAG="12.9.1-devel-ubuntu24.04"
 
 FROM ${BASE_IMAGE}:${BASE_IMAGE_TAG} AS nixl_base
 ENV DEBIAN_FRONTEND=noninteractive
@@ -24,9 +24,7 @@ ARG PYTHON_VERSION=3.12
 ARG NSYS_URL=https://developer.nvidia.com/downloads/assets/tools/secure/nsight-systems/2025_1/
 ARG NSYS_PKG=NsightSystems-linux-cli-public-2025.1.1.131-3554042.deb
 
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt \
-    apt-get update -y && apt-get install -y --no-install-recommends \
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
     curl \
     git \
     libnuma-dev \
@@ -193,7 +191,7 @@ WORKDIR /workspace/vllm
 RUN uv venv .vllm --python 3.12
 
 # Supported archs
-ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9+PTX;9.0+PTX"
+ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9+PTX;9.0+PTX;10.0+PTX"
 
 # Install core dependencies (Torch first)
 RUN . .vllm/bin/activate && \

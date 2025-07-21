@@ -1,5 +1,5 @@
 ARG CUDA_MAJOR=12
-ARG CUDA_MINOR=8
+ARG CUDA_MINOR=9
 ARG CUDA_PATCH=1
 
 # ============================================================================
@@ -8,7 +8,7 @@ ARG CUDA_PATCH=1
 FROM nvcr.io/nvidia/cuda:${CUDA_MAJOR}.${CUDA_MINOR}.${CUDA_PATCH}-devel-ubi9 AS builder
 
 ARG CUDA_MAJOR=12
-ARG CUDA_MINOR=8
+ARG CUDA_MINOR=9
 ARG CUDA_PATCH=1
 ARG PYTHON_VERSION
 
@@ -19,7 +19,7 @@ ENV LANG=C.UTF-8 \
     UV_LINK_MODE=copy \
     TORCH_CUDA_ARCH_LIST="9.0a;10.0+PTX" \
     PYTHON_VERSION=${PYTHON_VERSION:-3.12} \
-    UV_TORCH_BACKEND=${UV_TORCH_BACKEND:-cu${CUDA_MAJOR}${CUDA_MINOR}} \
+    UV_TORCH_BACKEND=${UV_TORCH_BACKEND:-cu128} \
     VIRTUAL_ENV=/opt/vllm 
 
 # Update base packages
@@ -71,8 +71,7 @@ ENV NVSHMEM_DIR="/opt/nvshmem-${NVSHMEM_VERSION}" \
     LIBRARY_PATH="/opt/nvshmem-${NVSHMEM_VERSION}/lib:${LIBRARY_PATH}"
 
 # Build and install gdrcopy
-RUN --mount=type=cache,target=/var/cache/git \
-    git clone https://github.com/NVIDIA/gdrcopy.git && \
+RUN git clone https://github.com/NVIDIA/gdrcopy.git && \
     cd gdrcopy && \
     PREFIX=/usr/local DESTLIB=/usr/local/lib make lib_install && \
     cp src/libgdrapi.so.2.* /usr/lib64/ && \
@@ -81,8 +80,7 @@ RUN --mount=type=cache,target=/var/cache/git \
 
 # Build and install UCX
 ARG UCX_VERSION="v1.19.0-rc1"
-RUN --mount=type=cache,target=/var/cache/git \
-    git clone https://github.com/openucx/ucx.git && \
+RUN git clone https://github.com/openucx/ucx.git && \
     cd ucx && \
     git checkout ${UCX_VERSION} && \
     ./autogen.sh && \
@@ -140,8 +138,7 @@ RUN cd /tmp && \
 
 # Pin torch, so all deps are built against the same version 
 # as vllm itself
-RUN --mount=type=cache,target=/root/.cache/uv \
-  source ${VIRTUAL_ENV}/bin/activate && \
+RUN source ${VIRTUAL_ENV}/bin/activate && \
   uv pip install \
     # global
     numpy torch==2.7.1 \ 
@@ -156,8 +153,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # via threadpool w/ UCX workers - to be fixed in nixl=0.5.
 ARG NIXL_REPO_URL="https://github.com/ai-dynamo/nixl.git"
 ARG NIXL_COMMIT_SHA="ba7e40760027796890ad17e95620526c3c5560ee"
-RUN --mount=type=cache,target=/tmp/nixl-cache \
-    ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/lib64/ && \
+RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/lib64/ && \
     mkdir /opt/nixl && cd /opt/nixl && \
     git clone ${NIXL_REPO_URL} . && \
     git checkout ${NIXL_COMMIT_SHA} && \
@@ -188,8 +184,7 @@ ARG LMCACHE_COMMIT_SHA=c1563bc9c72ea0d71156a3d9a6cd643170828acf
 ARG VLLM_COMMIT_SHA=8dfb45ca3379b3a789ec529af4bf725daa07f10d
 
 # Clone repositories with cache mounts
-RUN --mount=type=cache,target=/var/cache/git \
-    git clone https://github.com/neuralmagic/LMCache.git && \
+RUN git clone https://github.com/neuralmagic/LMCache.git && \
     cd LMCache && \
     git checkout -q $LMCACHE_COMMIT_SHA && \
     cd .. && \
@@ -212,8 +207,7 @@ ARG PPLX_KERNELS_URL="https://github.com/neuralmagic/pplx-kernels"
 RUN mkdir -p /wheels
 
 # Build compiled packages as wheels (only ones that need build tools)
-RUN --mount=type=cache,target=/root/.cache/uv \
-    source ${VIRTUAL_ENV}/bin/activate && \
+RUN source ${VIRTUAL_ENV}/bin/activate && \
     \
     # Install build tools
     uv pip install build cuda-python numpy setuptools-scm && \
@@ -246,7 +240,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM nvcr.io/nvidia/cuda:${CUDA_MAJOR}.${CUDA_MINOR}.${CUDA_PATCH}-devel-ubi9 AS runtime
 
 ARG CUDA_MAJOR=12
-ARG CUDA_MINOR=8
+ARG CUDA_MINOR=9
 ARG CUDA_PATCH=1
 ARG PYTHON_VERSION
 ARG NVSHMEM_VERSION=3.3.9
@@ -254,7 +248,7 @@ ARG NVSHMEM_VERSION=3.3.9
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     PYTHON_VERSION=${PYTHON_VERSION:-3.12} \
-    UV_TORCH_BACKEND=${UV_TORCH_BACKEND:-cu${CUDA_MAJOR}${CUDA_MINOR}} \
+    UV_TORCH_BACKEND=${UV_TORCH_BACKEND:-cu128} \
     VIRTUAL_ENV=/opt/vllm \
     NVSHMEM_DIR="/opt/nvshmem-${NVSHMEM_VERSION}" \
     LD_LIBRARY_PATH="/usr/local/cuda/lib64:/usr/local/lib:/usr/local/lib64:/opt/nvshmem-${NVSHMEM_VERSION}/lib:${LD_LIBRARY_PATH}" \
@@ -318,8 +312,7 @@ ARG VLLM_COMMIT_SHA=8dfb45ca3379b3a789ec529af4bf725daa07f10d
 
 
 # Install all packages
-RUN --mount=type=cache,target=/var/cache/git \
-    source /opt/vllm/bin/activate && \
+RUN source /opt/vllm/bin/activate && \
     \
     # Install PyTorch and cuda-python
     uv pip install cuda-python huggingface_hub[hf_xet] && \
