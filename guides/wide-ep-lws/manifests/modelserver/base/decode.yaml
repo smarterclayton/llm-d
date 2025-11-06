@@ -48,7 +48,7 @@ spec:
             emptyDir: {}
         containers:
         - name: vllm
-          image: ghcr.io/llm-d/llm-d-cuda:v0.3.1
+          image: ghcr.io/llm-d/llm-d-cuda-dev:pr-435
           securityContext:
             capabilities:
               add:
@@ -181,14 +181,14 @@ spec:
             httpGet:
               path: /health
               port: metrics
-            periodSeconds: 30
+            periodSeconds: 1
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /v1/models
+              path: /health
               port: metrics
-            periodSeconds: 10
+            periodSeconds: 1
             timeoutSeconds: 5
             failureThreshold: 3
           resources:
